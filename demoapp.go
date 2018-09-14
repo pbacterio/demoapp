@@ -102,18 +102,43 @@ func getIpList() string {
 	return strings.Join(ipList, ", ")
 }
 
+func kill(c echo.Context) error {
+	os.Exit(0)
+	return nil
+}
+
+func slow(c echo.Context) error {
+	seconds := c.Param("seconds")
+	if seconds == "" {
+		return c.String(http.StatusInternalServerError, "fail!\n")
+	}
+	secondsNum, err := strconv.ParseFloat(seconds, 64)
+	if err != nil {
+		return err
+	}
+	time.Sleep(time.Duration(int64(secondsNum * float64(time.Second))))
+	return c.String(http.StatusOK, "ok\n")
+}
+
 func main() {
 	e := echo.New()
 
+	// Just OK
 	e.Any("/", ok)
 	e.Any("/ok", ok)
+
+	// Getting info
 	e.Any("/info", info)
 	e.Any("/env", env)
 	e.Any("/req", req)
+
+	// Failing
 	e.Any("/fail", fail)
 	e.Any("/fail/:code", fail)
 	e.Any("/fail/:code/:text", fail)
 	e.Any("/rand/fail/:percent", randFail)
+	e.Any("/kill", kill)
+	e.Any("/slow/:seconds", slow)
 
 	port := os.Getenv("DEMO_PORT")
 	if port == "" {
